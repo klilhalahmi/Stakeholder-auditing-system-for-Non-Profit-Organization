@@ -33,7 +33,7 @@ This repository contains the implementation of a sophisticated stakeholder analy
 ## Prerequisites
 
 - Python 3.11+
-- OpenAI API key in ".env" file (OPENAI_API_KEY='sk-pr..............yoA')
+- OpenAI API key in `.env` file (OPENAI_API_KEY='sk-pr..............yoA')
 - Required Python packages (see `requirements.txt`)
 
 ## Usage
