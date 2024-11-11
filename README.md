@@ -30,6 +30,40 @@ This repository contains the implementation of a sophisticated stakeholder analy
 ## Workflow
 ![workflow_graph](https://github.com/user-attachments/assets/0ac0321f-9fb9-4439-8d24-ea1418ea4561)
 
+## How It Works
+
+The tool employs a sophisticated pipeline that combines web crawling, natural language processing, and AI analysis:
+
+1. **Web Crawling and Content Processing**
+   - Systematically crawls the organization's website while respecting domain boundaries
+   - Extracts and cleans textual content from each webpage
+   - Splits content into manageable chunks for processing
+
+2. **Semantic Analysis and Storage**
+   - Creates embeddings of content chunks using OpenAI's embedding model
+   - Stores embeddings in a Chroma vector database for efficient semantic search
+   - Enables retrieval of contextually relevant content using cosine similarity
+
+3. **Stakeholder Identification**
+   - For each potential stakeholder type, creates targeted search queries
+   - Retrieves relevant content chunks using semantic similarity matching
+   - Enriches prompts with stakeholder-specific parameters and interests
+   - Uses LLM analysis to determine stakeholder relevance based on specific criteria
+   - Filters results using configurable relevance thresholds
+
+4. **Comprehensive Analysis via LLM**
+   - Performs detailed analysis of how each identified stakeholder is served
+   - Evaluates content relevance, clarity, and effectiveness
+   - Generates stakeholder-specific impressions and recommendations
+
+5. **Evaluation and Reporting**
+   - Calculates coverage metrics across all potential stakeholders
+   - Evaluates content quality and relevance scores
+   - Performs sentiment analysis on stakeholder impressions
+   - Generates detailed reports with actionable insights
+   - Provides actionable improvement recommendations.
+   - Scoring: Provides a 1-5 rating on how well the website serves each stakeholder's needs
+
 ## Prerequisites
 
 - Python 3.11+
@@ -40,13 +74,6 @@ This repository contains the implementation of a sophisticated stakeholder analy
 
 1. Set the target website URL in `settings.py`
 2. Run `npo_audit_engin.py`
-
-The tool will:
-1. Crawl the specified website
-2. Create embeddings of the content
-3. Identify relevant stakeholders
-4. Analyze stakeholder relationships
-5. Generate comprehensive reports
 
 ## Project Structure
 
