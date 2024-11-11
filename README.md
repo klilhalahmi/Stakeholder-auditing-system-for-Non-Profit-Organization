@@ -2,9 +2,6 @@
 
 This repository contains the implementation of a sophisticated stakeholder analysis tool designed for non-profit organizations (NPOs). It automatically crawls organization websites, identifies key stakeholders, and provides comprehensive analysis of how well the organization serves different stakeholder needs.
 
-## Workflow
-![workflow_graph](https://github.com/user-attachments/assets/0ac0321f-9fb9-4439-8d24-ea1418ea4561)
-
 ## Features
 
 - 🔍 **Intelligent Web Crawling**
@@ -29,6 +26,9 @@ This repository contains the implementation of a sophisticated stakeholder analy
   - Quality assessment
   - Sentiment distribution analysis
   - Detailed recommendations
+
+## Workflow
+![workflow_graph](https://github.com/user-attachments/assets/0ac0321f-9fb9-4439-8d24-ea1418ea4561)
 
 ## Prerequisites
 
