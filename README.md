@@ -68,9 +68,3 @@ The analysis generates several output files in the `analysis_output` directory:
 - `evaluation_metrics.json`: Machine-readable evaluation data
 - `workflow_graph.png`: Visual representation of the analysis workflow
 
-
-[Add your chosen license here]
-
-## Contact
-
-[Add your contact information]
