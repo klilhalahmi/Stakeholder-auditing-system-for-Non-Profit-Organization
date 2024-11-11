@@ -1,4 +1,4 @@
-# Stakeholder-auditing-system-for-Non-Profit-Organization
+# Stakeholder Auditing System for Non Profit Organization
 
 This repository contains the implementation of a sophisticated stakeholder analysis tool designed for non-profit organizations (NPOs). It automatically crawls organization websites, identifies key stakeholders, and provides comprehensive analysis that aims to show organizations how different players perceive them in the nonprofit sector.
 
