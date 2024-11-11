@@ -3,8 +3,7 @@
 This repository contains the implementation of a sophisticated stakeholder analysis tool designed for non-profit organizations (NPOs). It automatically crawls organization websites, identifies key stakeholders, and provides comprehensive analysis of how well the organization serves different stakeholder needs.
 
 ## Workflow
-
-![Stakeholder-auditing-system-for-Non-Profit-Organization](analysis_output/workflow_graph.png)
+![workflow_graph](https://github.com/user-attachments/assets/0ac0321f-9fb9-4439-8d24-ea1418ea4561)
 
 ## Features
 
