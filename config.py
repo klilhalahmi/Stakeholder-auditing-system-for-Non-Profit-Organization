@@ -20,12 +20,6 @@ class StakeholderIdentification:
         justification (Dict[str, str]): Reasoning for each stakeholder identification,
             where the key is the stakeholder name and the value is the justification text
     
-    Example:
-        >>> identification = StakeholderIdentification(
-        ...     identified_stakeholders=["Employees", "Customers"],
-        ...     stakeholder_data={"Employees": [{"role": "Staff"}]},
-        ...     justification={"Employees": "Found in company structure"}
-        ... )
     """
     identified_stakeholders: List[str]
     stakeholder_data: Dict[str, List[Dict]]
@@ -43,13 +37,7 @@ class StakeholderAudit:
         stakeholder_impressions (Dict[str, str]): Map of stakeholder names to
             detailed impressions/analysis, where the key is the stakeholder name
             and the value is the audit impression text
-    
-    Example:
-        >>> audit = StakeholderAudit(
-        ...     stakeholder_impressions={
-        ...         "Employees": "High engagement with company initiatives"
-        ...     }
-        ... )
+
     """
     stakeholder_impressions: Dict[str, str]
 
@@ -74,16 +62,7 @@ class IdentificationState:
             Defaults to "start"
         is_facebook (bool): Flag indicating if the source is Facebook.
             Defaults to False
-    
-    Example:
-        >>> state = IdentificationState(
-        ...     current_step="identification",
-        ...     identified_stakeholders=StakeholderIdentification(
-        ...         identified_stakeholders=[],
-        ...         stakeholder_data={},
-        ...         justification={}
-        ...     )
-        ... )
+
     """
     website_data: Optional[dict] = None
     crawler: Optional[WebsiteCrawler] = None
