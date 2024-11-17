@@ -57,6 +57,7 @@ class WebsiteCrawler:
         }
         
         try:
+            # Initialize OpenAI embeddings
             self.embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
             self.logger.info("OpenAI embeddings initialized successfully")
         except Exception as e:
@@ -122,14 +123,18 @@ class WebsiteCrawler:
         try:
             response = requests.get(url, headers=self.headers, timeout=10)
             response.encoding = 'utf-8'
+            # Raise an exception for bad status codes
             response.raise_for_status()
             
             self.logger.debug(f"Successfully fetched {url} (Status: {response.status_code})")
             
+            # Parse HTML content
             soup = BeautifulSoup(response.text, 'html.parser')
             
             # Extract links for crawling
             links = set()
+            
+            # Find all anchor tags with href attribute
             for a in soup.find_all('a', href=True):
                 href = a.get('href', '')
                 full_url = urljoin(url, href)
@@ -276,6 +281,7 @@ class WebsiteCrawler:
                 self.visited_urls.add(current_url)
                 self.logger.info(f"Processing URL: {current_url}")
                 
+                # Fetch and parse content
                 new_links, page_data = self.get_page_content(current_url)
                 
                 if page_data:
@@ -284,7 +290,8 @@ class WebsiteCrawler:
                 
                 urls_to_visit.update(new_links - self.visited_urls)
                 
-                time.sleep(1)  # Rate limiting
+                # Rate limiting to avoid overwhelming the server
+                time.sleep(1)
             
             self.create_vector_store()
             
