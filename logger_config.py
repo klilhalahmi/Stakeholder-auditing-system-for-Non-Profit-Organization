@@ -20,10 +20,6 @@ class CustomLogger:
         log_dir (str): Directory where log files will be stored. Defaults to "logs".
         log_level (int): Logging level (e.g., logging.INFO, logging.DEBUG). Defaults to logging.INFO.
         
-    Example:
-        >>> logger = CustomLogger(log_dir="logs", log_level=logging.DEBUG).get_logger("MyApp")
-        >>> logger.info("Application started")
-        >>> logger.error("An error occurred", exc_info=True)
     """
     
     def __init__(self, log_dir: str = "logs", log_level: int = logging.INFO):
@@ -58,10 +54,7 @@ class CustomLogger:
             
         Returns:
             logging.Logger: Configured logger instance
-            
-        Example:
-            >>> logger = CustomLogger().get_logger("MyComponent")
-            >>> logger.info("Component initialized")
+
         """
         # Return existing logger if already created
         if self._logger is not None:
