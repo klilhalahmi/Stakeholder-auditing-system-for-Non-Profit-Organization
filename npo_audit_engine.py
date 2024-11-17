@@ -10,7 +10,7 @@ from IPython.display import display, Image
 from langchain_core.runnables.graph import MermaidDrawMethod
 from tqdm import tqdm
 from datetime import datetime
-from settings import OPENAI_API_KEY, WEBSITE_URL, OUTPUT_DIR, MODEL, RELEVANCE_THRESHOLD, TOTAL_PLAYERS
+from settings import OPENAI_API_KEY, WEBSITE_URL, OUTPUT_DIR, MODEL, RELEVANCE_THRESHOLD, TOTAL_PLAYERS, MAX_RELEVANT
 from stakeholder_classes import StakeholderProfile
 
 from website_crawler import WebsiteCrawler
@@ -102,7 +102,7 @@ def analyze_stakeholder_relevance(content_chunks: List[Dict], stakeholder: Stake
         human_content = f"""Analyze this content generously, looking for any possible connection to the stakeholder: 
 
         {combined_content}"""
-        
+
         prompt = ChatPromptTemplate.from_messages([
             SystemMessage(content=system_content),
             HumanMessage(content=human_content)
@@ -141,7 +141,6 @@ def analyze_stakeholder_relevance(content_chunks: List[Dict], stakeholder: Stake
     except Exception as e:
         logger.error(f"Error analyzing stakeholder {stakeholder.name}: {str(e)}", exc_info=True)
         return False, f"Error during analysis: {str(e)}"
-    
 
 def identify_stakeholders(state: IdentificationState) -> IdentificationState:
     """Identifies relevant stakeholders by analyzing content chunks for each potential stakeholder."""
@@ -151,15 +150,11 @@ def identify_stakeholders(state: IdentificationState) -> IdentificationState:
     
     print("\nAnalyzing stakeholders...")
     
-    # Use TOTAL_PLAYERS instead of calling StakeholderRegistry directly
     for stakeholder in tqdm(TOTAL_PLAYERS, desc="Analyzing stakeholders"):
         print(f"\nProcessing: {stakeholder.name}")
         
-        # Create more targeted search queries based on stakeholder parameters
         search_queries = f"{stakeholder.name.lower()}, {stakeholder.description.lower()}"
-        
         all_content_chunks = state.crawler.search_similar_content(search_queries, k=5)
-            
         relevant_chunks = [chunk for chunk in all_content_chunks if chunk['score'] > RELEVANCE_THRESHOLD]
         
         if relevant_chunks:
@@ -185,121 +180,120 @@ def identify_stakeholders(state: IdentificationState) -> IdentificationState:
         justification=justifications
     )
     
+    # Set appropriate state transition
     if not identified_stakeholders:
         print("\n===================================")
         print("No stakeholders were identified!")
         print("Attempting to include core stakeholders as fallback...")
         print("===================================\n")
+        state.current_step = "no_stakeholders"
     else:
-        print(f"Successfully identified {len(identified_stakeholders)} stakeholders:\n")
+        print(f"\nSuccessfully identified {len(identified_stakeholders)} stakeholders:")
         for stakeholder in identified_stakeholders:
-            print(f"{stakeholder.name}")
+            print(f"- {stakeholder.name}")
         state.current_step = "identification_complete"
     
     return state
 
 def conduct_stakeholder_audit(state: IdentificationState) -> IdentificationState:
-    """Analyzes how each identified stakeholder is generally impressed by the NPO."""
+    """Conducts a stakeholder audit by evaluating content sections for each identified stakeholder."""
     llm = ChatOpenAI(model=MODEL, temperature=0.7, api_key=OPENAI_API_KEY)
     all_impressions = {}
     
-    system_message = """You are a website content analyzer evaluating how well an organization's website serves different stakeholder needs.
-
-    STAKEHOLDER PROFILE:
-    Name: {stakeholder_name}
-    Description: {stakeholder_description}
-    
-    KEY INTERESTS FOR THIS STAKEHOLDER:
-    {website_interests}
-    
-    WHAT THIS STAKEHOLDER TYPICALLY LOOKS FOR:
-    {relevancy_parameters}
-
-    Your task is to analyze how well the website content meets this stakeholder's needs and interests.
-    Consider:
-    1. Content relevance and accessibility
-    2. Call-to-action effectiveness
-    3. Value proposition clarity
-    4. Engagement opportunities
-    5. Information findability
-    6. Trust signals and credibility
-    7. Potential improvements"""
-
-    human_message = """Analyze this content from the stakeholder's perspective and provide:
-
-    1. CONTENT EVALUATION
-    - Relevance to stakeholder needs:
-    - Information completeness:
-    - Content clarity and accessibility:
-    - Value proposition for this stakeholder:
-
-    2. ENGAGEMENT ASSESSMENT
-    - Call-to-action effectiveness:
-    - Engagement opportunities:
-    - Communication channels:
-    - Trust indicators:
-
-    3. GAPS AND IMPROVEMENTS
-    - Missing critical information:
-    - Navigation/accessibility issues:
-    - Engagement barriers:
-    - Suggested improvements:
-
-    4. OVERALL RATING (1-5)
-    Rate how well the website serves this stakeholder's needs:
-    [Include rating and justification]"""
-    
-    prompt = ChatPromptTemplate.from_messages([
-        SystemMessage(content=system_message),
-        HumanMessage(content=human_message)
-    ])
-    
     logger.info("Starting stakeholder audit process")
     
-    # Analyze each stakeholder's content
     for stakeholder in state.identified_stakeholders.identified_stakeholders:
         logger.info(f"Analyzing stakeholder: {stakeholder.name}")
         print(f"\nAnalyzing content for: {stakeholder.name}")
         
+        # Format content sections with scores
         stakeholder_chunks = state.identified_stakeholders.stakeholder_data[stakeholder.name]
-        combined_content = "\n".join([
-            f"Content {i+1} (Relevance: {chunk['score']:.2f}):\n{chunk['content']}\n"
-            for i, chunk in enumerate(stakeholder_chunks)
-        ])
+        sorted_chunks = sorted(stakeholder_chunks, key=lambda x: x['score'], reverse=True)
+        content_sections = [
+            f"Content Section {i+1} (Relevance Score: {chunk['score']:.2f})\n"
+            f"----------------------------------------\n"
+            f"{chunk['content']}"
+            for i, chunk in enumerate(sorted_chunks)
+        ]
+        combined_content = "\n\n".join(content_sections)
+
+        # Construct system message with stakeholder context
+        system_message = f"""You are a website content analyzer evaluating how well an organization's website serves different stakeholder needs.
+
+        STAKEHOLDER PROFILE:
+        Name: {stakeholder.name}
+        Description: {stakeholder.description}
         
-        # Analyze the stakeholder's impression
+        KEY INTERESTS:
+        {chr(10).join(f"- {interest}" for interest in stakeholder.website_interests)}
+        
+        TYPICAL NEEDS:
+        {chr(10).join(f"- {param}" for param in stakeholder.relevancy_parameters)}
+
+        Evaluate how well the content meets this stakeholder's needs. Consider:
+        - Content relevance and completeness
+        - Call-to-action effectiveness
+        - Value proposition clarity
+        - Engagement opportunities
+        - Information accessibility
+        - Trust indicators"""
+
+        # Construct human message with evaluation structure
+        human_message = f"""Analyze this content and provide:
+
+        1. CONTENT EVALUATION
+        - Relevance to stakeholder needs:
+        - Information completeness:
+        - Content clarity and accessibility:
+        - Value proposition:
+
+        2. ENGAGEMENT ASSESSMENT
+        - Call-to-action effectiveness:
+        - Engagement opportunities:
+        - Communication channels:
+        - Trust indicators:
+
+        3. GAPS AND IMPROVEMENTS
+        - Missing critical information:
+        - Navigation/accessibility issues:
+        - Engagement barriers:
+        - Suggested improvements:
+
+        4. OVERALL RATING (1-5 with justification)
+
+        Analyze ONLY the content provided between the triple dashes below. Do not make assumptions or include external information. Base your response exclusively on what is explicitly stated in this content:
+        ---
+        {combined_content}
+        ---
+        """
+
         try:
-            result = llm.invoke(
-                prompt.format_messages(
-                    stakeholder_name=stakeholder.name,
-                    stakeholder_description=stakeholder.description,
-                    website_interests="\n".join(f"- {interest}" for interest in stakeholder.website_interests),
-                    relevancy_parameters="\n".join(f"- {param}" for param in stakeholder.relevancy_parameters),
-                    content=combined_content
-                )
-            )
-            impression = result.content.strip()
+            result = llm.invoke([
+                SystemMessage(content=system_message),
+                HumanMessage(content=human_message)
+            ])
             
-            all_impressions[stakeholder.name] = impression
+            all_impressions[stakeholder.name] = result.content
+            
             print(f"✓ Analysis completed for {stakeholder.name}")
-            
+            print(f"  - Content Sections Analyzed: {len(sorted_chunks)}")
+                
         except Exception as e:
             error_msg = f"Error analyzing {stakeholder.name}: {str(e)}"
             logger.error(error_msg, exc_info=True)
             print(f"! {error_msg}")
-            all_impressions[stakeholder.name] = "Error during analysis"
+            all_impressions[stakeholder.name] = {"error": str(e)}
     
     state.stakeholder_audit = StakeholderAudit(stakeholder_impressions=all_impressions)
     state.current_step = "audit_complete"
     return state
 
 def save_results_node(state: IdentificationState) -> IdentificationState:
-    """Saves analysis results."""
+    """Saves the final analysis results to files."""
     output_dir = Path(OUTPUT_DIR)
     output_dir.mkdir(exist_ok=True)
     
-    # Save final audit results (simplified)
-    with open(output_dir / "final_audit.txt", "w") as f:
+    with open(output_dir / "final_audit.txt", "w", encoding="utf-8") as f:
         f.write("STAKEHOLDER AUDIT RESULTS\n")
         f.write("=" * 50 + "\n\n")
         
@@ -309,22 +303,17 @@ def save_results_node(state: IdentificationState) -> IdentificationState:
             f.write(f"{state.stakeholder_audit.stakeholder_impressions[stakeholder.name]}\n")
             f.write("\n" + "-" * 50 + "\n\n")
     
-    # Save stakeholder analysis information
-    with open(output_dir / "stakeholder_analysis_info.txt", "w") as f:
+    with open(output_dir / "stakeholder_analysis_info.txt", "w", encoding="utf-8") as f:
         f.write("STAKEHOLDER ANALYSIS INFORMATION\n")
         f.write("=" * 50 + "\n\n")
         
-        # Get all potential stakeholders from TOTAL_PLAYERS
         for stakeholder in TOTAL_PLAYERS:
             f.write(f"Stakeholder: {stakeholder.name}\n")
             
-            # Get the search queries used
             search_queries = f"{stakeholder.name.lower()}, {stakeholder.description.lower()}"
-            # Get the content chunks for this stakeholder
-            content_chunks = state.crawler.search_similar_content(search_queries, k=5)
+            content_chunks = state.crawler.search_similar_content(search_queries, k=MAX_RELEVANT)
             relevant_chunks = [chunk for chunk in content_chunks if chunk['score'] > RELEVANCE_THRESHOLD]
             
-            # Write chunk scores
             f.write("Retrieved Chunk Scores:\n")
             for i, chunk in enumerate(content_chunks, 1):
                 f.write(f"  Chunk {i}: {chunk['score']:.3f}\n")
@@ -332,21 +321,15 @@ def save_results_node(state: IdentificationState) -> IdentificationState:
             f.write(f"Total chunks retrieved: {len(content_chunks)}\n")
             f.write(f"Chunks passing threshold: {len(relevant_chunks)}\n")
             
-            # Check if stakeholder was found relevant
             is_relevant = any(s.name == stakeholder.name 
                             for s in state.identified_stakeholders.identified_stakeholders)
             f.write(f"Relevant for audit: {'Yes' if is_relevant else 'No'}\n")
             f.write("\n" + "-" * 50 + "\n\n")
     
-    print(f"\nAudit results saved to: {output_dir}/final_audit.txt")
-    print(f"Stakeholder analysis information saved to: {output_dir}/stakeholder_analysis_info.txt")
-    
-    # Evaluation
     try:
         evaluator = StakeholderAnalysisEvaluator(output_dir)
         evaluator.evaluate_results(state)
         logger.info("Evaluation completed successfully")
-        
     except Exception as e:
         logger.error("Error during evaluation", exc_info=True)
         print("Evaluation could not be completed, but analysis results were saved.")
@@ -371,6 +354,7 @@ def run_identification(website_url: str):
         
         workflow.set_entry_point("check_web_fb")
     
+        # Route after URL check
         def route_based_on_url(state: IdentificationState) -> str:
             return state.current_step
         
@@ -383,6 +367,19 @@ def run_identification(website_url: str):
             }
         )
         
+        # Route after crawler initialization
+        def route_after_crawler(state: IdentificationState) -> str:
+            return state.current_step
+        
+        workflow.add_conditional_edges(
+            "initialize_website_crawler",
+            route_after_crawler,
+            {
+                "crawl_complete": "identify_stakeholders"
+            }
+        )
+        
+        # Route after identification
         def route_after_identification(state: IdentificationState) -> str:
             return state.current_step
         
@@ -395,14 +392,31 @@ def run_identification(website_url: str):
             }
         )
         
-        workflow.add_edge("initialize_website_crawler", "identify_stakeholders")
-        workflow.add_edge("conduct_stakeholder_audit", "save_analysis_results")
-        workflow.add_edge("save_analysis_results", END)
+        # Route after audit
+        def route_after_audit(state: IdentificationState) -> str:
+            return state.current_step
         
-        app = workflow.compile()
+        workflow.add_conditional_edges(
+            "conduct_stakeholder_audit",
+            route_after_audit,
+            {
+                "audit_complete": "save_analysis_results"
+            }
+        )
         
-        logger.info("Workflow compiled successfully")
+        # Final route
+        def route_final(state: IdentificationState) -> str:
+            return state.current_step
+        
+        workflow.add_conditional_edges(
+            "save_analysis_results",
+            route_final,
+            {
+                "complete": END
+            }
+        )
 
+        app = workflow.compile()
         try:
             if app.get_graph():
                 graph_png = app.get_graph().draw_mermaid_png(
@@ -428,7 +442,6 @@ def run_identification(website_url: str):
     except Exception as e:
         logger.error("Error during workflow execution", exc_info=True)
         raise
-
 
 if __name__ == "__main__":
     run_identification(WEBSITE_URL)
