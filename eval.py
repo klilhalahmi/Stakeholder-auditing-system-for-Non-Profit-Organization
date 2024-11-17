@@ -20,7 +20,7 @@ from logger_config import CustomLogger
 
 logger = CustomLogger().get_logger("Evaluator")
 
-@dataclass
+@dataclass(slots=True)
 class EvaluationMetrics:
     """
     Container for comprehensive stakeholder analysis evaluation metrics.
@@ -173,7 +173,7 @@ class StakeholderAnalysisEvaluator:
             
             return np.mean([
                 np.mean(relevance_scores),
-                min(1.0, content_length / 1000)  # Normalize content length
+                min(1.0, content_length / 1000)
             ])
         except Exception as e:
             logger.error(f"Error evaluating content quality: {str(e)}")
@@ -193,7 +193,7 @@ class StakeholderAnalysisEvaluator:
             # Relevance metrics calculation
             all_scores = []
             for stakeholder in state.identified_stakeholders.identified_stakeholders:
-                chunks = state.identified_stakeholders.stakeholder_data[stakeholder.name]  # Use name as key
+                chunks = state.identified_stakeholders.stakeholder_data[stakeholder.name]
                 all_scores.extend([chunk['score'] for chunk in chunks])
                 
             avg_relevance_score = np.mean(all_scores) if all_scores else 0
@@ -202,7 +202,7 @@ class StakeholderAnalysisEvaluator:
             
             # Content metrics calculation
             chunks_per_stakeholder = [
-                len(state.identified_stakeholders.stakeholder_data[s.name])  # Use name as key
+                len(state.identified_stakeholders.stakeholder_data[s.name])
                 for s in state.identified_stakeholders.identified_stakeholders
             ]
             avg_chunks = np.mean(chunks_per_stakeholder) if chunks_per_stakeholder else 0
@@ -218,18 +218,18 @@ class StakeholderAnalysisEvaluator:
                 try:
                     # Content quality evaluation
                     content_score = self.evaluate_content_quality(
-                        state.identified_stakeholders.stakeholder_data[stakeholder.name]  # Use name as key
+                        state.identified_stakeholders.stakeholder_data[stakeholder.name]
                     )
                     content_scores.append(content_score)
                     
                     # Justification quality evaluation
                     justification_score = self.evaluate_justification_quality(
-                        state.identified_stakeholders.justification[stakeholder.name]  # Use name as key
+                        state.identified_stakeholders.justification[stakeholder.name]
                     )
                     justification_scores.append(justification_score)
                     
                     # Impression clarity evaluation
-                    impression = state.stakeholder_audit.stakeholder_impressions[stakeholder.name]  # Use name as key
+                    impression = state.stakeholder_audit.stakeholder_impressions[stakeholder.name]
                     impression_score = self.evaluate_impression_clarity(impression)
                     impression_scores.append(impression_score)
                     
