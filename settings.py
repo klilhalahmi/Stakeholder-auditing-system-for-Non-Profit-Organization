@@ -20,7 +20,7 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # API key for OpenAI services
 
 # Target Website Configuration
-WEBSITE_URL = "https://psychologistsofcolor.com/"  # Website to analyze for stakeholders
+WEBSITE_URL = "https://actsofwisdom.com/"  # Website to analyze for stakeholders
 
 # Output Configuration
 OUTPUT_DIR = "analysis_output"  # Directory for storing analysis results
@@ -35,3 +35,4 @@ TOTAL_PLAYERS = StakeholderRegistry.get_all_stakeholders()
 
 # Analysis Parameters
 RELEVANCE_THRESHOLD = 0.65  # Minimum similarity score for stakeholder relevance (0.0 to 1.0)
+MAX_RELEVANT = 7           # Maximum number of relevant stakeholders to display
