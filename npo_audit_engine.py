@@ -291,7 +291,7 @@ def conduct_stakeholder_audit(state: IdentificationState) -> IdentificationState
 def save_results_node(state: IdentificationState) -> IdentificationState:
     """Saves the final analysis results to files."""
     output_dir = Path(OUTPUT_DIR)
-    output_dir.mkdir(exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
     
     with open(output_dir / "final_audit.txt", "w", encoding="utf-8") as f:
         f.write("STAKEHOLDER AUDIT RESULTS\n")
@@ -417,15 +417,21 @@ def run_identification(website_url: str):
         )
 
         app = workflow.compile()
+
         try:
             if app.get_graph():
+                # Create output directory if it doesn't exist
+                output_dir = Path(OUTPUT_DIR)
+                output_dir.mkdir(parents=True, exist_ok=True)
+
                 graph_png = app.get_graph().draw_mermaid_png(
                     draw_method=MermaidDrawMethod.API
                 )
                 
                 graph_path = Path(OUTPUT_DIR) / "workflow_graph.png"
-                with open(graph_path, "wb") as f:
-                    f.write(graph_png)
+
+                # Save the graph
+                graph_path.write_bytes(graph_png)
                 
                 display(Image(graph_png))
                 logger.info("Workflow graph generated successfully")
