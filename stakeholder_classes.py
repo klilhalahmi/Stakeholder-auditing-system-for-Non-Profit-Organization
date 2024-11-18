@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
-@dataclass
+@dataclass(slots=True)
 class StakeholderProfile:
     """
     Represents an individual stakeholder type with their specific characteristics.
